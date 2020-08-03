@@ -1,23 +1,14 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const MaskData = require('maskdata');
-
 
 const User = require('../models/User');
 
 // créer un compte
 exports.signup = (req, res, next) => {
-    const emailMask2Options = {
-      maskWith: "*", 
-      unmaskedStartCharactersBeforeAt: 3,
-      unmaskedEndCharactersAfterAt: 2,
-      maskAtTheRate: false
-    };
-
     bcrypt.hash(req.body.password, 10)
       .then(hash => {
         const user = new User({
-          email: MaskData.maskEmail2(req.body.email, emailMask2Options),
+          email: req.body.email,
           password: hash
         });
         user.save()
@@ -29,13 +20,7 @@ exports.signup = (req, res, next) => {
 
 // Connexion à son compte
 exports.login = (req, res, next) => {
-  const emailMask2Options = {
-    maskWith: "*", 
-    unmaskedStartCharactersBeforeAt: 3,
-    unmaskedEndCharactersAfterAt: 2,
-    maskAtTheRate: false
-  };
-  User.findOne({ email: MaskData.maskEmail2(req.body.email, emailMask2Options)})
+  User.findOne({ email: req.body.email })
     .then(user => {
       if (!user) {
         return res.status(401).json({ error: 'Utilisateur non trouvé !' });
@@ -49,7 +34,7 @@ exports.login = (req, res, next) => {
             userId: user._id,
             token: jwt.sign(
               { userId: user._id },
-              '&VEq2#!WyA#XhTGjwQ2E7Y^@5fRbn7',
+              process.env.TOKEN,
               { expiresIn: '24h' }
             )
           });
@@ -58,4 +43,3 @@ exports.login = (req, res, next) => {
     })
     .catch(error => res.status(500).json({ error }));
 };
-
